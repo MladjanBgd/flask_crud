@@ -26,6 +26,7 @@ class User(db.Model):
     """
     Class User where we store username and email
     """
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String, unique=True)
     email = db.Column(db.String, unique=True)
@@ -39,6 +40,7 @@ class UserSchema(ma.Schema):
     """
     User Schema for de/serialistaion json
     """
+
     class Meta:
         fileds = ("username", "email")  # fields to expose
 
@@ -46,11 +48,12 @@ class UserSchema(ma.Schema):
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 
+
 @app.route("/user", method=["POST"])
 def add_user():
     """
     endpoint for add user
-    """    
+    """
     username = request.json["username"]
     email = request.json["email"]
     new_user = User(username, email)
@@ -65,7 +68,7 @@ def add_user():
 def user_list():
     """
     endpoint for show all user
-    """  
+    """
     all_users = User.query.all()
     result = users_schema.dump(all_users)
 
@@ -76,7 +79,7 @@ def user_list():
 def get_user(id):
     """
     endpoint for show user
-    """  
+    """
     user_id = User.query.get(id)
 
     return user_schema.jsonify(user_id)
@@ -86,7 +89,7 @@ def get_user(id):
 def update_user(id):
     """
     endpoint for update user
-    """  
+    """
     username = request.json["username"]
     email = request.json["email"]
 
@@ -103,7 +106,7 @@ def update_user(id):
 def delete_user(id):
     """
     endpoint for delete user
-    """  
+    """
     user = User.query.get(id)
 
     db.session.delete(id)
