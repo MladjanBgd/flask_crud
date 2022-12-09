@@ -6,16 +6,16 @@ Created on Fri Dec  9 08:54:18 2022
 """
 
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, json, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
-
+from marshmallow import fields
 
 app = Flask(__name__)
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
-    base_dir, "databse.sqlite"
+    base_dir, "database.sqlite"
 )
 
 db = SQLAlchemy(app)
@@ -26,7 +26,7 @@ class User(db.Model):
     """
     Class User where we store username and email
     """
-
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String, unique=True)
     email = db.Column(db.String, unique=True)
@@ -35,12 +35,16 @@ class User(db.Model):
         self.username = username
         self.email = email
 
+    def __repr__(self):
+        return '<username: %s, email: %s>' %(self.username, self.email)
 
 class UserSchema(ma.Schema):
     """
     User Schema for de/serialistaion json
     """
-
+    username = fields.String(required=True, allow_none=True)
+    email = fields.Email(required=True, allow_none=True)
+    
     class Meta:
         fileds = ("username", "email")  # fields to expose
 
@@ -49,7 +53,7 @@ user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 
 
-@app.route("/user", method=["POST"])
+@app.route("/user", methods=["POST"], strict_slashes=False)
 def add_user():
     """
     endpoint for add user
@@ -61,10 +65,10 @@ def add_user():
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify(new_user)
+    result = user_schema.dump(new_user)
+    return result, 201
 
-
-@app.route("user", method=["GET"])
+@app.route("/user", methods=["GET"])
 def user_list():
     """
     endpoint for show all user
@@ -72,20 +76,19 @@ def user_list():
     all_users = User.query.all()
     result = users_schema.dump(all_users)
 
-    return jsonify(result.data)
+    return result, 201
 
-
-@app.route("/user/<id>", method=["GET"])
+@app.route("/user/<int:id>", methods=["GET"])
 def get_user(id):
     """
     endpoint for show user
     """
     user_id = User.query.get(id)
 
-    return user_schema.jsonify(user_id)
+    result = user_schema.dump(user_id)
+    return result, 201
 
-
-@app.route("user/<id>", method=["PUT"])
+@app.route("/user/<int:id>", methods=["PUT"])
 def update_user(id):
     """
     endpoint for update user
@@ -99,21 +102,32 @@ def update_user(id):
 
     db.session.commit()
 
-    return user_schema.jsonify(user)
+    #return user_schema.jsonify(user)
+    result = user_schema.dump(user)
+    return result, 201
 
-
-@app.route("user/<id>", method=["DELETE"])
+@app.route("/user/<int:id>", methods=["DELETE"], strict_slashes=True)
 def delete_user(id):
     """
     endpoint for delete user
     """
     user = User.query.get(id)
 
-    db.session.delete(id)
-    db.commit()
+    db.session.delete(user)
+    db.session.commit()
 
-    return user_schema.jsonify(user)
+    return jsonify({"sucess:": "True"})
 
 
 if __name__ == "__main__":
     app.run(debug=True)
+    
+#prepare database    
+# from flask_crud import db, app
+# with app.app_context():
+#     db.create_all()
+
+
+#{"username":"Najnoviji User","email":"new222@blah.com"}
+#curl to add user
+#curl -i -H "Content-Type: application/json" -X POST -d "{\"username\":\"abc\", \"email\":\"abc@blob.com\"}" "http://127.0.0.1:5000/user"
