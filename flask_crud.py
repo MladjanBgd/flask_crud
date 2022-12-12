@@ -119,6 +119,14 @@ def delete_user(id):
     return jsonify({"sucess:": "True"})
 
 
+#playing with RESTfull
+from flask_restful import Resource, Api
+api = Api(app)
+class Hi(Resource):
+    def get(self):
+        return {'hello': 'world'}
+api.add_resource(Hi, '/')
+
 if __name__ == "__main__":
     app.run(debug=True)
     
